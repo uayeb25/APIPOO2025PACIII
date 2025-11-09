@@ -1,0 +1,16 @@
+[{
+    "career_id": 12345,
+    "career_name": "Software Engineer",
+    "school_id": 67890,
+    "school_name": "Engineering School",
+    "enrollment_date": "2022-09-01",
+    "active": true
+},
+{
+    "career_id": 54321,
+    "career_name": "Data Scientist",
+    "school_id": 9876,
+    "school_name": "Science School",
+    "enrollment_date": "2021-01-15",
+    "active": false
+}]
