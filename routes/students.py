@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Request
 from models.students import Student
 from controllers.students import (
     create_student
+    , update_student
 )
 
 router = APIRouter(prefix="/students")
@@ -9,4 +10,10 @@ router = APIRouter(prefix="/students")
 @router.post( "/" , tags=["Students"] )
 async def create_new_student(student_data: Student):
     result = await create_student(student_data)
+    return result
+
+@router.put("/{id}", tags=["Students"])
+async def update_student_information( student_data: Student , id: int ):
+    student_data.id = id
+    result = await update_student(student_data)
     return result

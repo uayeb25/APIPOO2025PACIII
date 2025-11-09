@@ -12,24 +12,29 @@ class Student(BaseModel):
     firstname: Optional[str] = Field(
         description="Primer nombre del estudiante",
         pattern=r"^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ' -]+$",
+        default=None,
         examples=["Juan","Maria"]
     )
 
     lastname: Optional[str] = Field(
         description="Primer nombre del estudiante",
         pattern=r"^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ' -]+$",
+        default=None,
         examples=["Perez","Martinez"]
     )
 
     idperson: Optional[str] = Field(
-        pattern=r"^[A-Za-z0-9' -]+$"
+        pattern=r"^[A-Za-z0-9' -]+$",
+        default=None
     )
 
     email: Optional[str] = Field(
         pattern=r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$",
+        default=None,
         examples=["usuario@example.com"]
     )
 
     age: Optional[int] = Field(
-        ge=14
+        ge=14,
+        default=None
     )
