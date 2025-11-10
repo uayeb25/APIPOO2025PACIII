@@ -11,6 +11,71 @@ logger = logging.getLogger(__name__)
 
 
 
+async def get_one( id: int ) -> Student:
+
+    selectscript = """
+        SELECT [id]
+            ,[firstname]
+            ,[lastname]
+            ,[idperson]
+            ,[email]
+            ,[age]
+        FROM [academics].[students]
+        WHERE id = ?
+    """
+
+    params = [id]
+    result_dict=[]
+    try:
+        result = await execute_query_json(selectscript, params=params)
+        result_dict = json.loads(result)
+
+        if len(result_dict) > 0:
+            return result_dict[0]
+        else:
+            raise HTTPException(status_code=404, detail=f"student not found")
+
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=f"Database error: { str(e) }")
+
+
+async def get_all() -> list[Student]:
+
+    selectscript = """
+        SELECT [id]
+            ,[firstname]
+            ,[lastname]
+            ,[idperson]
+            ,[email]
+            ,[age]
+        FROM [academics].[students]
+    """
+
+    result_dict=[]
+    try:
+        result = await execute_query_json(selectscript)
+        result_dict = json.loads(result)
+        return result_dict
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: { str(e) }")
+
+
+async def delete_student( id: int ) -> str:
+
+    deletescript = """
+        DELETE FROM [academics].[students]
+        WHERE [id] = ?;
+    """
+
+    params = [id];
+
+    try:
+        await execute_query_json(deletescript, params=params, needs_commit=True)
+        return "DELETED"
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: { str(e) }")
+
+
 async def update_student( student: Student ) -> Student:
 
     dict = student.model_dump(exclude_none=True)
