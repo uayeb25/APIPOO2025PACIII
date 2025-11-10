@@ -1,9 +1,11 @@
+from datetime import datetime
 import json
 import logging
 
 from fastapi import HTTPException
 
 from models.students import Student
+from models.student_carrers import StudentCareer
 from utils.database import execute_query_json
 
 logging.basicConfig(level=logging.INFO)
@@ -171,6 +173,171 @@ async def create_student( student: Student ) -> Student:
         raise HTTPException(status_code=500, detail=f"Database error: { str(e) }")
 
 
+## CAREERS INTERACTION FUNCTIONS ##
+
+async def add_career(student_id: int, career_id: int) -> StudentCareer:
+
+    insert_script = """
+        INSERT INTO [academics].[student_careers] ([student_id], [career_id], [enrollment_date], [active])
+        VALUES (?, ?, ?, ?);
+    """
+
+    params = [
+        student_id,
+        career_id,
+        datetime.now(),
+        True
+    ]
+
+    try:
+        await execute_query_json(insert_script, params, needs_commit=True)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: { str(e) }")
+
+    select_script = """
+        SELECT
+            sc.career_id
+            , c.name as career_name
+            , c.school_id
+            , s.name as school_name
+            , sc.enrollment_date
+            , sc.active
+        FROM academics.student_careers sc
+        inner join academics.careers c 
+        on sc.career_id = c.id
+        INNER JOIN academics.schools s
+        on c.school_id = s.id
+        WHERE sc.student_id = ?
+        and sc.career_id = ?;
+    """
+
+    params = [student_id, career_id]
+
+    try:
+        result = await execute_query_json(select_script, params=params)
+        return json.loads(result)[0]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: { str(e) }")
+
+async def get_all_careers(student_id: int) -> list[StudentCareer]:
+    select_script = """
+        SELECT
+            sc.career_id
+            , c.name as career_name
+            , c.school_id
+            , s.name as school_name
+            , sc.enrollment_date
+            , sc.active
+        FROM academics.student_careers sc
+        inner join academics.careers c
+        on sc.career_id = c.id
+        INNER JOIN academics.schools s
+        on c.school_id = s.id
+        WHERE sc.student_id = ?
+    """
+
+    params = [student_id]
+
+    try:
+        result = await execute_query_json(select_script, params=params)
+        dict_result = json.loads(result)
+        if len(dict_result) == 0:
+            raise HTTPException(status_code=404, detail="No careers found for the student")
+
+        return dict_result
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=f"Database error: { str(e) }")
 
 
+async def get_one_career(student_id: int, career_id: int) -> StudentCareer:
+    select_script = """
+        SELECT
+            sc.career_id
+            , c.name as career_name
+            , c.school_id
+            , s.name as school_name
+            , sc.enrollment_date
+            , sc.active
+        FROM academics.student_careers sc
+        inner join academics.careers c 
+        on sc.career_id = c.id
+        INNER JOIN academics.schools s
+        on c.school_id = s.id
+        WHERE sc.student_id = ?
+        and sc.career_id = ?;
+    """
 
+    params = [student_id, career_id]
+
+    try:
+        result = await execute_query_json(select_script, params=params)
+        dict_result = json.loads(result)
+        if len(dict_result) == 0:
+            raise HTTPException(status_code=404, detail="No careers found for the student")
+
+        return dict_result[0]
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=f"Database error: { str(e) }")
+
+
+async def remove_career(student_id: int, career_id: int) -> str:
+    delete_script = """
+        DELETE FROM [academics].[student_careers]
+        WHERE [student_id] = ? AND [career_id] = ?;
+    """
+
+    params = [student_id, career_id]
+
+    try:
+        await execute_query_json(delete_script, params=params, needs_commit=True)
+        return "CAREER REMOVED"
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: { str(e) }")
+
+
+async def update_career_info(career_data: StudentCareer) -> StudentCareer:
+    dict = career_data.model_dump(exclude_none=True)
+    keys = [ k for k in  dict.keys() ]
+    keys.remove('student_id')
+    keys.remove('career_id')
+    variables = " = ?, ".join(keys)+" = ?"
+
+    updatescript = f"""
+        UPDATE [academics].[student_careers]
+        SET {variables}
+        WHERE [student_id] = ? AND [career_id] = ?;
+    """
+
+    params = [ dict[v] for v in keys ]
+    params.append( career_data.student_id )
+    params.append( career_data.career_id )
+
+    try:
+        await execute_query_json( updatescript, params, needs_commit=True )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: { str(e) }")
+
+    select_script = """
+        SELECT
+            sc.career_id
+            , c.name as career_name
+            , c.school_id
+            , s.name as school_name
+            , sc.enrollment_date
+            , sc.active
+        FROM academics.student_careers sc
+        inner join academics.careers c 
+        on sc.career_id = c.id
+        INNER JOIN academics.schools s
+        on c.school_id = s.id
+        WHERE sc.student_id = ?
+        and sc.career_id = ?;
+    """
+
+    params = [career_data.student_id, career_data.career_id]
+
+    try:
+        result = await execute_query_json(select_script, params=params)
+        return json.loads(result)[0]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: { str(e) }")
